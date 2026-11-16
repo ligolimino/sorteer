@@ -617,7 +617,10 @@
         // Steekt iets boven, onder of naast het scherm uit (ook bij
         // centreren)?
         const box = app.getBoundingClientRect();
-        const outside = [boardNode, bankNode, feedbackNode].some((node) => {
+        // In de kleine versie zweeft de terugkoppeling over het keuzevak en
+        // telt ze niet mee.
+        const measured = settings.compact ? [boardNode, bankNode] : [boardNode, bankNode, feedbackNode];
+        const outside = measured.some((node) => {
             const r = node.getBoundingClientRect();
             return r.top < box.top - 1 || r.bottom > box.bottom + 1 || r.left < box.left - 1 || r.right > box.right + 1;
         });
@@ -671,6 +674,63 @@
         });
         zoneCols = best.cols;
         apply(Math.max(MIN_UNIT, best.unit * Math.min(1, settings.textSize)));
+        placeFeedback();
+    }
+
+    // Kleine versie (Genially): geen vaste strook voor het vinkje en de
+    // knop Opnieuw. Ze verschijnen na het nakijken midden over het
+    // keuzevak, dat dan meestal leeg is.
+    function placeFeedback() {
+        if (!settings.compact || !feedbackNode) {
+            return;
+        }
+        const box = app.getBoundingClientRect();
+        const bank = bankNode.getBoundingClientRect();
+        let spot = {
+            x: bank.left + bank.width / 2,
+            y: bank.top + bank.height / 2,
+        };
+        // Liggen er nog kaartjes in het keuzevak, dan op de langste rij
+        // lege plaatsen, zodat er geen kaartje bedekt wordt.
+        const visible = state.place.some((place, index) => place < 0 && !cardNodes[index].classList.contains("in-flight"));
+        if (visible && !app.classList.contains("done")) {
+            let best = null;
+            let run = [];
+            const finishRun = () => {
+                if (run.length) {
+                    const first = run[0].getBoundingClientRect();
+                    const last = run[run.length - 1].getBoundingClientRect();
+                    const candidate = {
+                        size: run.length,
+                        x: (first.left + last.right) / 2,
+                        y: (first.top + first.bottom) / 2,
+                    };
+                    const distance = (c) => Math.hypot(c.x - spot.x, c.y - spot.y);
+                    if (!best || candidate.size > best.size
+                        || (candidate.size === best.size && distance(candidate) < distance(best))) {
+                        best = candidate;
+                    }
+                }
+                run = [];
+            };
+            homeNodes.forEach((home, index) => {
+                const empty = state.place[index] >= 0;
+                const sameRow = run.length
+                    && Math.abs(run[0].getBoundingClientRect().top - home.getBoundingClientRect().top) < 2;
+                if (!empty || !sameRow) {
+                    finishRun();
+                }
+                if (empty) {
+                    run.push(home);
+                }
+            });
+            finishRun();
+            if (best) {
+                spot = best;
+            }
+        }
+        feedbackNode.style.left = `${spot.x - box.left}px`;
+        feedbackNode.style.top = `${spot.y - box.top}px`;
     }
 
     /* ------------------------------------------------------------
@@ -804,6 +864,7 @@
         retry.appendChild(icon("retry"));
         retry.addEventListener("click", resetAll);
         feedbackNode.appendChild(retry);
+        placeFeedback();
         if (good) {
             app.classList.add("done");
             state.locked = state.locked.map(() => true);

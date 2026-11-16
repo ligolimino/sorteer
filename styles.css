@@ -97,7 +97,7 @@ button {
     padding: 12px 12px 0;
 }
 .app.compact .stage {
-    padding: 4px 4px 0;
+    padding: 1px 1px 0;
 }
 .app:not(.compact) .stage {
     flex: 1 1 auto;
@@ -421,7 +421,8 @@ button {
 .app.compact .bank {
     border-top: 0;
     background: transparent;
-    padding: 4px 4px calc(6px + env(safe-area-inset-bottom));
+    /* Net genoeg ruimte voor de schaduw van de kaartjes. */
+    padding: calc(var(--u) * 0.16) 2px 4px;
 }
 /* De vaste plaats van een kaartje: blijft bewaard als het kaartje weg
    is, zodat de andere kaartjes niet verspringen. */
@@ -472,9 +473,31 @@ button {
     justify-content: center;
     gap: 14px;
 }
+/* Kleine versie: de terugkoppeling neemt geen plaats in, maar zweeft
+   (pas na het nakijken) midden over het keuzevak. app.js zet de plaats. */
+.app {
+    position: relative;
+}
 .app.compact .feedback {
-    height: 36px;
-    margin-top: 4px;
+    position: absolute;
+    z-index: 20;
+    height: auto;
+    margin: 0;
+    padding: 4px 8px;
+    gap: 10px;
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    visibility: hidden;
+}
+.app.compact .feedback.good,
+.app.compact .feedback.bad {
+    visibility: visible;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 2px 10px rgba(23, 48, 66, 0.18);
+}
+.app.compact .feedback .retry-btn {
+    pointer-events: auto;
 }
 .feedback.good {
     color: var(--good);
