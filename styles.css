@@ -1,0 +1,567 @@
+/* ================================================================
+   Letterlab — koppelen en sorteren
+   1. Lettertype en kleuren (dezelfde als de sleepoefening)
+   ================================================================ */
+
+@font-face {
+    font-family: Andika;
+    src: url("assets/fonts/andika-400.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+}
+:root {
+    --ink: #056181;
+    --teal: #087f8c;
+    --teal-dark: #08646d;
+    --blue: #d9f2f4;
+    --pink: #e7427a;
+    --paper: #f7fbfb;
+    --line: #c8dfe1;
+    --good: #16805d;
+    --good-soft: #e3f4ec;
+    --bad: #c53b56;
+    --bad-soft: #fee7ed;
+    --tile-line: #cbd8db;
+    --tile-shadow: 0 2px 3px rgba(23, 48, 66, 0.1), 0 6px 14px rgba(23, 48, 66, 0.14);
+}
+
+/* ================================================================
+   2. Basis
+   ================================================================ */
+
+* {
+    box-sizing: border-box;
+}
+html,
+body {
+    margin: 0;
+    height: 100%;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Andika, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+html.compact,
+html.compact body {
+    /* De versie voor Genially laat de achtergrond van de dia zien. */
+    background: transparent;
+}
+button {
+    font: inherit;
+    touch-action: manipulation;
+}
+.svg-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+.icon {
+    width: 1.6rem;
+    height: 1.6rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.icon.filled {
+    fill: currentColor;
+    stroke-width: 1.5;
+}
+
+/* --u is de basismaat van een kaartje. app.js berekent ze zo dat alles
+   op het scherm (of in het insluitvak van Genially) past. */
+.app {
+    --u: 60px;
+    --space: calc(var(--u) * 0.16);
+    height: 100svh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.stage {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 12px 0;
+}
+.app.compact .stage {
+    padding: 4px 4px 0;
+}
+.app:not(.compact) .stage {
+    flex: 1 1 auto;
+    justify-content: center;
+    background: #fff;
+}
+
+/* ================================================================
+   3. Instructie (alleen in de volledige versie)
+   ================================================================ */
+
+.instruction-bar {
+    flex: none;
+    display: flex;
+    justify-content: center;
+    padding: 10px 16px;
+    background: #f3f7ea;
+    border-bottom: 1px solid var(--line);
+}
+.play-btn {
+    width: 52px;
+    height: 52px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: var(--tile-shadow);
+}
+.play-btn .icon {
+    width: 24px;
+    height: 24px;
+}
+.play-btn.is-playing {
+    background: var(--teal);
+}
+.play-btn.is-hidden {
+    visibility: hidden;
+}
+
+/* ================================================================
+   4. Een kaartje, vast item of groepskop
+   Tekst, afbeelding en/of geluid. Alle kaartjes krijgen dezelfde maat
+   (--cw en --ch), vaste items en koppen ook (--fw en --fh).
+   ================================================================ */
+
+.item {
+    position: relative;
+    flex: none;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--u) * 0.05);
+    min-width: calc(var(--u) * 0.9);
+    min-height: calc(var(--u) * 0.9);
+    padding: calc(var(--u) * 0.08) calc(var(--u) * 0.16);
+    border: 1.5px solid var(--tile-line);
+    border-radius: calc(var(--u) * 0.14);
+    background: #fff;
+    color: var(--ink);
+    line-height: 1.1;
+    white-space: nowrap;
+}
+.item-text {
+    display: block;
+    font-size: calc(var(--u) * 0.3);
+}
+.item.text-only .item-text {
+    font-size: calc(var(--u) * 0.56);
+    line-height: 1.15;
+}
+.item-img {
+    display: block;
+    height: var(--u);
+    width: auto;
+    max-width: calc(var(--u) * 1.7);
+    object-fit: contain;
+    border-radius: calc(var(--u) * 0.06);
+    pointer-events: none;
+}
+.item-img.missing {
+    width: var(--u);
+    background: repeating-linear-gradient(45deg, #eef4f5 0 6px, #fff 6px 12px);
+}
+/* Alleen geluid: een luisterknop. */
+.item.sound-only {
+    color: var(--teal);
+}
+.item.sound-only > .icon {
+    width: calc(var(--u) * 0.52);
+    height: calc(var(--u) * 0.52);
+}
+.item.sound-only.is-playing,
+.item.is-playing {
+    border-color: var(--teal);
+    box-shadow: inset 0 0 0 1.5px var(--teal);
+}
+/* Klein luidsprekertje: dit kun je beluisteren. */
+.sound-mark {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    display: grid;
+    color: var(--teal);
+    opacity: 0.7;
+    pointer-events: none;
+}
+.sound-mark .icon {
+    width: clamp(10px, calc(var(--u) * 0.2), 20px);
+    height: clamp(10px, calc(var(--u) * 0.2), 20px);
+    stroke-width: 2;
+}
+
+/* Vaste items (koppelen) en groepskoppen (sorteren): geen schaduw,
+   want die kun je niet verslepen. */
+.fixed,
+.head {
+    width: var(--fw, auto);
+    height: var(--fh, auto);
+    cursor: default;
+}
+.head {
+    border-color: var(--teal);
+    border-width: 2px;
+    min-width: calc(var(--u) * 1.1);
+    min-height: calc(var(--u) * 1.1);
+}
+/* De kop van een groep (bv. de letter k) mag opvallen. */
+.head.text-only .item-text {
+    font-size: calc(var(--u) * 0.7);
+}
+
+/* Sleepkaartjes */
+.card {
+    width: var(--cw, auto);
+    height: var(--ch, auto);
+    box-shadow: var(--tile-shadow);
+    touch-action: none;
+    cursor: grab;
+}
+.card:hover {
+    border-color: var(--teal);
+}
+.card:focus-visible {
+    outline: 3px solid rgba(231, 66, 122, 0.45);
+    outline-offset: 2px;
+}
+.card.selected {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 2px var(--pink), var(--tile-shadow);
+}
+.card.in-flight {
+    visibility: hidden;
+}
+.card.good {
+    border-color: var(--good);
+    background: var(--good-soft);
+    color: var(--good);
+}
+.card.wrong {
+    border-color: var(--bad);
+    background: var(--bad-soft);
+    color: var(--bad);
+    animation: shake 0.28s linear 2;
+}
+.card.locked {
+    cursor: default;
+}
+.card.ghost {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 50;
+    margin: 0;
+    pointer-events: none;
+    box-shadow: 0 10px 24px rgba(20, 67, 79, 0.28);
+}
+@keyframes shake {
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+/* ================================================================
+   5. Vakjes (koppelen) en groepen (sorteren)
+   ================================================================ */
+
+.slot,
+.zone {
+    flex: none;
+    border-radius: calc(var(--u) * 0.14);
+    background: rgba(255, 255, 255, 0.75);
+    box-shadow:
+        inset 0 0 0 1.5px var(--tile-line),
+        0 1px 3px rgba(23, 48, 66, 0.08);
+    transition: background-color 0.15s, box-shadow 0.15s;
+}
+.app:not(.compact) .slot,
+.app:not(.compact) .zone {
+    background: #f4f9f9;
+}
+.slot {
+    display: flex;
+    width: var(--cw, var(--u));
+    height: var(--ch, var(--u));
+}
+.slot.filled {
+    background: none;
+    box-shadow: none;
+}
+.slot.near,
+.zone.near {
+    background: #fff;
+    box-shadow: inset 0 0 0 2.5px var(--teal);
+}
+/* Een kaartje is gekozen: de vakjes tonen dat je erop kunt tikken. */
+.slot.can-drop:not(.filled),
+.zone.can-drop {
+    box-shadow: inset 0 0 0 2px rgba(231, 66, 122, 0.55);
+    cursor: pointer;
+}
+
+/* Een groep: kaartjes naast elkaar, met plaats voor alle kaartjes die
+   erin horen (plus één). Bij meer kaartjes groeit de groep. */
+.zone {
+    --zone-gap: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    justify-content: center;
+    gap: var(--zone-gap);
+    padding: var(--zone-gap);
+    width: calc(var(--zone-cols, 1) * var(--cw, var(--u)) + (var(--zone-cols, 1) + 1) * var(--zone-gap));
+    min-height: calc(var(--zone-rows, 2) * var(--ch, var(--u)) + (var(--zone-rows, 2) + 1) * var(--zone-gap));
+}
+
+/* ================================================================
+   6. Opstelling: horizontaal of verticaal
+   ================================================================ */
+
+.board {
+    display: flex;
+    justify-content: center;
+    gap: calc(var(--u) * 0.28);
+    max-width: 100%;
+}
+
+/* Koppelen, horizontaal: vaste items naast elkaar, vakje eronder. */
+.horizontal .board.koppel {
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+.pair {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--u) * 0.12);
+}
+/* Koppelen, verticaal: vaste items onder elkaar, vakje ernaast. */
+.vertical .board.koppel {
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--u) * 0.14);
+}
+.vertical .pair {
+    flex-direction: row;
+    gap: calc(var(--u) * 0.2);
+}
+
+/* Sorteren, horizontaal: groepen naast elkaar, kaartjes eronder. */
+.group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--u) * 0.1);
+}
+.horizontal .board.sorteer {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+/* Sorteren, verticaal: groepen onder elkaar, kaartjes ernaast. */
+.vertical .board.sorteer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: calc(var(--u) * 0.14);
+}
+.vertical .group {
+    flex-direction: row;
+    align-items: stretch;
+    gap: calc(var(--u) * 0.14);
+}
+.vertical .zone {
+    justify-content: flex-start;
+    align-content: center;
+    min-width: calc(var(--zone-cols, 1) * var(--cw, var(--u)) + (var(--zone-cols, 1) + 1) * var(--zone-gap));
+    width: auto;
+    flex: 1 1 auto;
+}
+
+/* ================================================================
+   7. Keuzevak met de kaartjes
+   ================================================================ */
+
+.bank {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    gap: calc(var(--u) * 0.16);
+    padding: 12px max(12px, env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: #fff;
+}
+.app.compact .bank {
+    border-top: 0;
+    background: transparent;
+    padding: 4px 4px calc(6px + env(safe-area-inset-bottom));
+}
+/* De vaste plaats van een kaartje: blijft bewaard als het kaartje weg
+   is, zodat de andere kaartjes niet verspringen. */
+.home {
+    flex: none;
+    display: flex;
+    width: var(--cw, auto);
+    height: var(--ch, auto);
+}
+/* Na een juist antwoord verdwijnen de overgebleven kaartjes. */
+.app.done .bank .card {
+    visibility: hidden;
+}
+
+/* Verticaal koppelen op een breed scherm: kaartjes rechts. */
+.app.side-bank .main {
+    flex-direction: row;
+    align-items: stretch;
+    justify-content: center;
+}
+.app.side-bank .stage {
+    flex: 0 1 auto;
+    justify-content: center;
+    padding-bottom: 8px;
+}
+.app.side-bank .bank {
+    flex: 0 1 auto;
+    flex-direction: column;
+    align-content: center;
+    border-top: 0;
+    border-left: 1px solid var(--line);
+    max-height: 100%;
+}
+.app.side-bank.compact .bank {
+    border-left: 0;
+}
+
+/* ================================================================
+   8. Terugkoppeling
+   ================================================================ */
+
+.feedback {
+    flex: none;
+    height: 44px;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+.app.compact .feedback {
+    height: 36px;
+    margin-top: 4px;
+}
+.feedback.good {
+    color: var(--good);
+}
+.feedback.bad {
+    color: var(--bad);
+}
+.feedback > .icon {
+    width: 36px;
+    height: 30px;
+    stroke-width: 3;
+}
+.retry-btn {
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--bad-soft);
+    color: var(--bad);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+.app.compact .retry-btn {
+    width: 34px;
+    height: 34px;
+}
+.retry-btn.good {
+    background: var(--blue);
+    color: var(--teal-dark);
+}
+.retry-btn .icon {
+    width: 22px;
+    height: 22px;
+}
+
+/* ================================================================
+   9. Uitlegpagina (link zonder oefening)
+   ================================================================ */
+
+.app.help-page {
+    height: auto;
+    overflow: visible;
+    user-select: text;
+    -webkit-user-select: text;
+}
+.help {
+    width: min(100%, 760px);
+    margin: 0 auto;
+    padding: 20px 18px 40px;
+    line-height: 1.5;
+}
+.help h1 {
+    color: var(--teal);
+    font-size: 1.6rem;
+    margin: 0 0 8px;
+}
+.help code {
+    background: var(--blue);
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 0.95em;
+}
+.help table {
+    width: 100%;
+    table-layout: fixed;
+    overflow-wrap: anywhere;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 0.95rem;
+}
+.help th:first-child {
+    width: 30%;
+}
+.help th,
+.help td {
+    text-align: left;
+    vertical-align: top;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--line);
+}
+.help a {
+    color: var(--teal-dark);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card.wrong {
+        animation: none;
+    }
+}
