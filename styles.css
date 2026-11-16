@@ -421,8 +421,14 @@ button {
 .app.compact .bank {
     border-top: 0;
     background: transparent;
-    /* Net genoeg ruimte voor de schaduw van de kaartjes. */
-    padding: calc(var(--u) * 0.16) 2px 4px;
+    /* Duidelijk wat meer ruimte boven de kaartjes dan tussen de rijen
+       van de oefening, voor het overzicht. */
+    padding: calc(var(--u) * 0.45) 2px 4px;
+}
+/* Kaartjes rechts (verticaal koppelen op een breed scherm): de extra
+   ruimte staat dan links van de kaartjes. */
+.app.compact.side-bank .bank {
+    padding: 2px 2px 4px calc(var(--u) * 0.45);
 }
 /* De vaste plaats van een kaartje: blijft bewaard als het kaartje weg
    is, zodat de andere kaartjes niet verspringen. */
